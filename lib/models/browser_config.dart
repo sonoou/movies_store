@@ -13,6 +13,8 @@ class BrowserConfig {
   // App Constants
   static const String appName = 'Movies';
   static const String defaultHomepage = 'https://onlyflix.to/';
+  static const String remoteAllowlistUrl =
+      'https://raw.githubusercontent.com/sonoou/movies_store/refs/heads/main/allowlist.txt';
 
   // Allowlist domains extracted from list
   static const List<String> defaultAllowlist = [

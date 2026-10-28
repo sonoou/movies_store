@@ -61,82 +61,210 @@ class CustomToolbar extends StatelessWidget implements PreferredSizeWidget {
                 child: DropdownButton<String>(
                   value: selectedValue,
                   menuMaxHeight: 280.0,
-                  icon: const Icon(Icons.arrow_drop_down, color: BrowserConfig.textColor, size: 20),
+                  icon: settings.isFetchingAllowlist
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(BrowserConfig.accentColor),
+                          ),
+                        )
+                      : const Icon(Icons.arrow_drop_down, color: BrowserConfig.textColor, size: 20),
                   dropdownColor: BrowserConfig.cardColor,
-                  hint: Text(
-                    '${allowedDomains.length} Sites',
-                    style: const TextStyle(color: BrowserConfig.textColor, fontSize: 12),
-                  ),
+                  hint: settings.isFetchingAllowlist
+                      ? const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 10,
+                              height: 10,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(BrowserConfig.accentColor),
+                              ),
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Updating...',
+                              style: TextStyle(color: BrowserConfig.textColor, fontSize: 12),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          '${allowedDomains.length} Sites',
+                          style: const TextStyle(color: BrowserConfig.textColor, fontSize: 12),
+                        ),
                   style: const TextStyle(color: BrowserConfig.textColor, fontSize: 12),
-                  onChanged: (String? selectedDomain) {
+                  onChanged: (String? selectedDomain) async {
+                    if (selectedDomain == '__REFRESH_ALLOWLIST__') {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Row(
+                            children: [
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              ),
+                              SizedBox(width: 12),
+                              Text('Fetching latest allowlist...'),
+                            ],
+                          ),
+                          backgroundColor: BrowserConfig.primaryColor,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      final success = await settings.fetchRemoteAllowlist();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              success
+                                  ? 'Allowlist updated successfully (${settings.allowedDomains.length} sites)!'
+                                  : 'Could not fetch remote list. Using cached list.',
+                            ),
+                            backgroundColor: success ? BrowserConfig.accentColor : BrowserConfig.errorColor,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                      return;
+                    }
                     if (selectedDomain != null && selectedDomain.isNotEmpty) {
                       onNavigate(UrlUtils.formatUrl(selectedDomain));
                     }
                   },
                   selectedItemBuilder: (BuildContext context) {
-                    return allowedDomains.asMap().entries.map<Widget>((entry) {
-                      int sn = entry.key + 1;
-                      String domain = entry.value;
-                      return Row(
+                    return [
+                      // Item 0: Corresponds to '__REFRESH_ALLOWLIST__'
+                      const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            '$sn. ',
-                            style: const TextStyle(
-                              color: BrowserConfig.accentColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            domain,
-                            style: const TextStyle(
-                              color: BrowserConfig.textColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          Icon(Icons.sync, color: BrowserConfig.accentColor, size: 14),
+                          SizedBox(width: 4),
+                          Text('Refresh', style: TextStyle(color: BrowserConfig.accentColor, fontSize: 12)),
                         ],
-                      );
-                    }).toList();
-                  },
-                  items: allowedDomains.asMap().entries.map<DropdownMenuItem<String>>((entry) {
-                    int sn = entry.key + 1;
-                    String domain = entry.value;
-                    return DropdownMenuItem<String>(
-                      value: domain,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: BrowserConfig.primaryColor,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: BrowserConfig.accentColor.withValues(alpha: 0.6), width: 0.5),
-                            ),
-                            child: Text(
-                              '$sn.',
+                      ),
+                      // Items 1..N: Correspond to allowedDomains
+                      ...allowedDomains.asMap().entries.map<Widget>((entry) {
+                        int sn = entry.key + 1;
+                        String domain = entry.value;
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$sn. ',
                               style: const TextStyle(
                                 color: BrowserConfig.accentColor,
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            domain,
-                            style: const TextStyle(
-                              color: BrowserConfig.textColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                            Text(
+                              domain,
+                              style: const TextStyle(
+                                color: BrowserConfig.textColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        );
+                      }),
+                    ];
+                  },
+                  items: [
+                    // Top Item: Refresh Button inside dropdown
+                    DropdownMenuItem<String>(
+                      value: '__REFRESH_ALLOWLIST__',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          children: [
+                            if (settings.isFetchingAllowlist)
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(BrowserConfig.accentColor),
+                                ),
+                              )
+                            else
+                              const Icon(Icons.sync, color: BrowserConfig.accentColor, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                settings.isFetchingAllowlist ? 'Updating allowlist...' : 'Refresh Allowlist',
+                                style: const TextStyle(
+                                  color: BrowserConfig.accentColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: BrowserConfig.primaryColor,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: BrowserConfig.accentColor.withValues(alpha: 0.6), width: 0.5),
+                              ),
+                              child: Text(
+                                '${allowedDomains.length}',
+                                style: const TextStyle(
+                                  color: BrowserConfig.textColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    );
-                  }).toList(),
+                    ),
+                    // All Allowlisted Websites
+                    ...allowedDomains.asMap().entries.map<DropdownMenuItem<String>>((entry) {
+                      int sn = entry.key + 1;
+                      String domain = entry.value;
+                      return DropdownMenuItem<String>(
+                        value: domain,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: BrowserConfig.primaryColor,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: BrowserConfig.accentColor.withValues(alpha: 0.6), width: 0.5),
+                              ),
+                              child: Text(
+                                '$sn.',
+                                style: const TextStyle(
+                                  color: BrowserConfig.accentColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              domain,
+                              style: const TextStyle(
+                                color: BrowserConfig.textColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
                 ),
               ),
             ),
