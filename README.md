@@ -16,12 +16,30 @@ Traditional mobile browsers suffer from aggressive pop-under ads, unwanted new t
 
 ---
 
+## 📦 Releases & Downloads (v1.0.0)
+
+Pre-built standalone Android release APKs are available in the [`releases/`](./releases/) directory:
+
+| Package | Target Architecture | Direct Download Link | Size |
+|:---|:---|:---:|:---:|
+| **ARM64 (v8a)** | **All modern Android smartphones** (99% of devices) | [⬇️ Download ARM64 APK](./releases/app-arm64-v8a-release.apk?raw=true) | ~19 MB |
+| **ARMv7 (32-bit)** | Older Android devices | [⬇️ Download ARMv7 APK](./releases/app-armeabi-v7a-release.apk?raw=true) | ~16.5 MB |
+| **x86_64** | Android Emulators / x86 Architecture | [⬇️ Download x86_64 APK](./releases/app-x86_64-release.apk?raw=true) | ~20.5 MB |
+
+For full checksums, SHA-256 verification, and installation steps, see [`releases/README.md`](./releases/README.md).
+
+---
+
 ## ✨ Key Features
 
+> 📖 **Full Details**: For an in-depth breakdown of every subsystem, algorithm, and optimization, check the [**Comprehensive Features Guide (`FEATURES.md`)**](./FEATURES.md).
+
 ### 🎬 Curated Movie & Series Allowlist
-- **Strict Domain Protection**: Only authorized movie and web series platforms from the internal allowlist can be opened. 
-- **Navigation Lockdown**: Any attempt by a webpage to redirect or navigate outside the curated allowlist is blocked instantly.
-- **Quick Site Switcher**: Integrated dropdown in the top toolbar with quick access to allowlisted sites.
+- **Strict Domain Protection**: Only authorized movie and web series platforms from the allowlist are permitted to load.
+- **Dynamic Remote Allowlist Sync**: Automatically fetches and syncs the latest movie & series domains from GitHub (`allowlist.txt`) in an independent background Dart Isolate thread (0% UI freeze/lag).
+- **Offline Caching & Fallback**: Stores allowed domains locally with `SharedPreferences`, loading instantly upon startup even when offline.
+- **In-Dropdown Allowlist Refresh**: Quick one-tap "Refresh Allowlist" action directly inside the domain picker with visual sync status indicators.
+- **Navigation Lockdown**: Any attempt by a webpage or script to redirect outside the curated allowlist is blocked instantly.
 
 ### 🛑 Dual-Layer Native Ad & Tracker Blocking
 - **Network & Host Matching**: Blocks known ad exchanges, pop-under networks, telemetry, and tracking scripts (e.g. DoubleClick, Google AdServices, PopAds, PropellerAds, ExoClick, Adsterra, etc.).
