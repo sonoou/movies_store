@@ -24,6 +24,7 @@ himovies.ac
 hydrahd.info
 hydrahd.gd
 hydrahd.com
+instant.io
 moviekids.bz
 movieplex.online
 moviesjoy.bz
@@ -49,5 +50,6 @@ theflixbay.com
 vidflix.live
 vidplay.top
 webtorrent.io
+webtor.io
 yomi.to
 zetmoon.live
